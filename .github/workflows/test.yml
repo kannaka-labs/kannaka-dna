@@ -1,0 +1,14 @@
+name: test
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Tests (stdlib only, no network)
+      run: python tests/test_kdna.py
+    - name: The published lineage verifies
+      run: python -m kdna verify genomes/kannaka-*.json

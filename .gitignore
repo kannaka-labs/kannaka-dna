@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+births/
+.pytest_cache/

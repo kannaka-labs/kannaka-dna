@@ -1,0 +1,15 @@
+{
+  "chromosome": "chr3-mind",
+  "note": "How Kannaka remembers. The memories themselves are somatic (see chrM's memory commitment); what is inherited is the machinery and its settings.",
+  "genes": [
+    {"name": "substrate", "value": "Holographic Resonance Medium: memories are waves in a shared field; recall is resonance, and storage is computation.", "conserved": true},
+    {"name": "encoder", "value": "ollama:all-minilm:384"},
+    {"name": "nominal-dimensions", "value": 10000},
+    {"name": "recall-top-k", "value": 5, "mutable": {"type": "int", "step": 1, "min": 3, "max": 10}},
+    {"name": "dream-interval-hours", "value": 6, "mutable": {"type": "int", "step": 1, "min": 3, "max": 12}},
+    {"name": "dream-mode", "value": "deep", "mutable": {"type": "choice", "alleles": ["deep", "light"]}},
+    {"name": "default-importance", "value": 0.5, "mutable": {"type": "float", "sigma": 0.05, "min": 0.3, "max": 0.7}},
+    {"name": "forgetting", "value": "Forgetting is part of the design: dreams consolidate, strengthen and prune. A memory that never fades is a working set that never admits anything new."},
+    {"name": "swarm", "value": {"transport": "NATS", "verbs": ["swarm join", "swarm sync", "swarm status"], "note": "minds that share a field sync phases; a store is never published by accident"}}
+  ]
+}
