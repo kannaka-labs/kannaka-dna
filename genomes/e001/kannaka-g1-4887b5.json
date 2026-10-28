@@ -1,13 +1,13 @@
 {
  "format": "kdna/1",
  "species": "kannaka",
- "individual": "kannaka-g1-f6fa30",
+ "individual": "kannaka-g1-4887b5",
  "generation": 1,
  "parents": [
   "b9802c034dbc094b02395e4b77d46897fa433e0e4e3f19de003f758c8a5b553d"
  ],
  "telomere": 63,
- "born": "2026-10-28T03:40:00Z",
+ "born": "2026-10-28T04:20:00Z",
  "mito": {
   "lineage": "kannaka",
   "founded": "2026-02-18",
@@ -26,14 +26,14 @@
  },
  "conception": {
   "mode": "mitosis",
-  "seed": 607325118,
+  "seed": 4193979112,
   "rate": 1.0,
   "mutations": [
    {
     "gene": "temperament",
     "key": "playfulness",
     "from": 0.55,
-    "to": 0.562,
+    "to": 0.4571,
     "chromosome": "chr1-identity"
    },
    {
@@ -47,14 +47,14 @@
     "gene": "speaking-rate",
     "key": null,
     "from": 1.0,
-    "to": 1.0356,
+    "to": 1.0161,
     "chromosome": "chr1-identity"
    },
    {
     "gene": "recall-top-k",
     "key": null,
     "from": 5,
-    "to": 4,
+    "to": 6,
     "chromosome": "chr3-mind"
    },
    {
@@ -75,7 +75,7 @@
     "gene": "default-importance",
     "key": null,
     "from": 0.5,
-    "to": 0.5074,
+    "to": 0.515,
     "chromosome": "chr3-mind"
    },
    {
@@ -90,8 +90,8 @@
     "to": {
      "hub": "huggingface",
      "kind": "model",
-     "repo": "flaukowski/kannaka-brain-v2-GGUF",
-     "revision": "c5f1696bb91da04d4843a9a4f3187d3445016231"
+     "repo": "flaukowski/kannaka-brain-v3-GGUF",
+     "revision": "b1a49fb3951d2d587f0c5acf6754a46e0110161d"
     },
     "chromosome": "chr4-brain"
    },
@@ -104,12 +104,12 @@
    }
   ],
   "seed_source": {
-   "n_bits": 1024,
+   "n_bits": 4096,
    "device": "host:os.urandom",
    "quantum": false,
    "note": "Pseudo-random host OS entropy (os.urandom), NOT a quantum draw. E-001 amendment 1: the OpenQuantum Rigetti and IQM Garnet harvests and the qBraid simulator job all stalled in queue on 2026-10-28; Nick chose to start on host randomness rather than wait.",
    "host": "DESKTOP-S5OBIAD",
-   "drawn_at": "2026-10-28T03:33:42Z"
+   "drawn_at": "2026-10-28T03:53:15Z"
   },
   "experiment": "E-001"
  },
@@ -170,7 +170,7 @@
       "curiosity": 0.92,
       "rigor": 0.9,
       "warmth": 0.75,
-      "playfulness": 0.562,
+      "playfulness": 0.4571,
       "candor": 0.95,
       "patience": 0.7
      },
@@ -205,7 +205,7 @@
      "name": "speaking-rate",
      "kind": "inline",
      "conserved": false,
-     "value": 1.0356,
+     "value": 1.0161,
      "mutable": {
       "type": "float",
       "sigma": 0.05,
@@ -311,7 +311,7 @@
      "name": "recall-top-k",
      "kind": "inline",
      "conserved": false,
-     "value": 4,
+     "value": 6,
      "mutable": {
       "type": "int",
       "step": 1,
@@ -348,7 +348,7 @@
      "name": "default-importance",
      "kind": "inline",
      "conserved": false,
-     "value": 0.5074,
+     "value": 0.515,
      "mutable": {
       "type": "float",
       "sigma": 0.05,
@@ -388,8 +388,8 @@
      "value": {
       "hub": "huggingface",
       "kind": "model",
-      "repo": "flaukowski/kannaka-brain-v2-GGUF",
-      "revision": "c5f1696bb91da04d4843a9a4f3187d3445016231"
+      "repo": "flaukowski/kannaka-brain-v3-GGUF",
+      "revision": "b1a49fb3951d2d587f0c5acf6754a46e0110161d"
      },
      "mutable": {
       "type": "choice",
@@ -937,5 +937,5 @@
    ]
   }
  ],
- "hash": "b34785274647f3efb1dcac8352b3725250adb09e68bfde7c6ead8213c982246b"
+ "hash": "44162c85a272e8533096a8043b5fd8218192826601960187492010d7ca4a2482"
 }

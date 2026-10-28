@@ -161,3 +161,27 @@ harvest (25 min) never returned, and even the free qBraid simulator job stalled 
 Nick chose to start rather than wait. The seeds only choose which mutations the eight arms carry;
 nothing in the measures or decision rules depends on their source. Each arm's
 `conception.seed_source` says `host:os.urandom`, `quantum: false`.
+
+**2 (2026-10-28, 40 minutes after switch-on; arms re-registered, clock restarted).** The first
+eight arms were drawn over four gateway aliases. In the first 40 minutes the relay showed that
+`kannaka-brain-v2` has **no deployment** behind its alias on this gateway (HTTP 400, "invalid
+model name"), so its four arms could only defer, and the proxy config shows `kannaka-brain-v1`
+is **the same Ollama model** as `kannaka-brain-7b-v1`. The arms therefore did not span the
+models the plan assumed. Served and distinct on this gateway: `kannaka-brain-7b-v1` and
+`kannaka-brain-v3`. The arms are regenerated over those two (new seeds, same procedure), the
+old arms' rows (3 proposals, 1 deferred) are excluded by moving the analysis `--since` to the
+new switch-on, and the first table below is kept as the record of what was registered first.
+The pre-registration's claim about `chr4-brain` now has two alleles to compare, not four.
+
+Generated 2026-10-28T04:20:00Z from `kannaka-g0` (b9802c034dbc094b), 21 seeds tried, seed source: `{"device": "host:os.urandom", "drawn_at": "2026-10-28T03:53:15Z", "host": "DESKTOP-S5OBIAD", "n_bits": 4096, "note": "Pseudo-random host OS entropy (os.urandom), NOT a quantum draw. E-001 amendment 1: the OpenQuantum Rigetti and IQM Garnet harvests and the qBraid simulator job all stalled in queue on 2026-10-28; Nick chose to start on host randomness rather than wait.", "quantum": false}`
+
+| individual | genome | model_alias | temperature | recall_top_k | mutated genes |
+|---|---|---|---|---|---|
+| `kannaka-g1-b95ebc` | `6a35375147fb5e23` | kannaka-brain-7b-v1 | 0.72 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-d1e409` | `e61a0a1b2b4c129c` | kannaka-brain-7b-v1 | 0.75 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-7f0ae8` | `6e46f447e13ef9b9` | kannaka-brain-7b-v1 | 0.73 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-0837b9` | `1a19331fc8040bae` | kannaka-brain-v3 | 0.73 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-19ad08` | `1215b41d81a8ed25` | kannaka-brain-v3 | 0.74 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-2cb7a2` | `5ab3a9f79d8c5eef` | kannaka-brain-7b-v1 | 0.71 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-4887b5` | `44162c85a272e853` | kannaka-brain-v3 | 0.67 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-3672b0` | `3af9c685ac4c626b` | kannaka-brain-7b-v1 | 0.74 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |

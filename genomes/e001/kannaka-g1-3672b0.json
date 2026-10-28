@@ -1,13 +1,13 @@
 {
  "format": "kdna/1",
  "species": "kannaka",
- "individual": "kannaka-g1-d3b7e4",
+ "individual": "kannaka-g1-3672b0",
  "generation": 1,
  "parents": [
   "b9802c034dbc094b02395e4b77d46897fa433e0e4e3f19de003f758c8a5b553d"
  ],
  "telomere": 63,
- "born": "2026-10-28T03:40:00Z",
+ "born": "2026-10-28T04:20:00Z",
  "mito": {
   "lineage": "kannaka",
   "founded": "2026-02-18",
@@ -26,14 +26,14 @@
  },
  "conception": {
   "mode": "mitosis",
-  "seed": 2319223744,
+  "seed": 3121635683,
   "rate": 1.0,
   "mutations": [
    {
     "gene": "temperament",
     "key": "playfulness",
     "from": 0.55,
-    "to": 0.59,
+    "to": 0.5617,
     "chromosome": "chr1-identity"
    },
    {
@@ -47,21 +47,21 @@
     "gene": "speaking-rate",
     "key": null,
     "from": 1.0,
-    "to": 1.1062,
+    "to": 0.9375,
     "chromosome": "chr1-identity"
    },
    {
     "gene": "recall-top-k",
     "key": null,
     "from": 5,
-    "to": 6,
+    "to": 4,
     "chromosome": "chr3-mind"
    },
    {
     "gene": "dream-interval-hours",
     "key": null,
     "from": 6,
-    "to": 5,
+    "to": 7,
     "chromosome": "chr3-mind"
    },
    {
@@ -75,7 +75,7 @@
     "gene": "default-importance",
     "key": null,
     "from": 0.5,
-    "to": 0.608,
+    "to": 0.5643,
     "chromosome": "chr3-mind"
    },
    {
@@ -90,8 +90,8 @@
     "to": {
      "hub": "huggingface",
      "kind": "model",
-     "repo": "flaukowski/kannaka-brain-v1-GGUF",
-     "revision": "57de0a12f8095c84c8f087d472b9df8ec2593686"
+     "repo": "flaukowski/kannaka-brain-7b-v1-GGUF",
+     "revision": "b9f78decb01a5d3825df79c2cd4441bef041e74d"
     },
     "chromosome": "chr4-brain"
    },
@@ -99,17 +99,17 @@
     "gene": "default-role",
     "key": null,
     "from": "role-steward",
-    "to": "role-scientist",
+    "to": "role-dj",
     "chromosome": "chrR-regulation"
    }
   ],
   "seed_source": {
-   "n_bits": 1024,
+   "n_bits": 4096,
    "device": "host:os.urandom",
    "quantum": false,
    "note": "Pseudo-random host OS entropy (os.urandom), NOT a quantum draw. E-001 amendment 1: the OpenQuantum Rigetti and IQM Garnet harvests and the qBraid simulator job all stalled in queue on 2026-10-28; Nick chose to start on host randomness rather than wait.",
    "host": "DESKTOP-S5OBIAD",
-   "drawn_at": "2026-10-28T03:33:42Z"
+   "drawn_at": "2026-10-28T03:53:15Z"
   },
   "experiment": "E-001"
  },
@@ -170,7 +170,7 @@
       "curiosity": 0.92,
       "rigor": 0.9,
       "warmth": 0.75,
-      "playfulness": 0.59,
+      "playfulness": 0.5617,
       "candor": 0.95,
       "patience": 0.7
      },
@@ -205,7 +205,7 @@
      "name": "speaking-rate",
      "kind": "inline",
      "conserved": false,
-     "value": 1.1062,
+     "value": 0.9375,
      "mutable": {
       "type": "float",
       "sigma": 0.05,
@@ -311,7 +311,7 @@
      "name": "recall-top-k",
      "kind": "inline",
      "conserved": false,
-     "value": 6,
+     "value": 4,
      "mutable": {
       "type": "int",
       "step": 1,
@@ -323,7 +323,7 @@
      "name": "dream-interval-hours",
      "kind": "inline",
      "conserved": false,
-     "value": 5,
+     "value": 7,
      "mutable": {
       "type": "int",
       "step": 1,
@@ -348,7 +348,7 @@
      "name": "default-importance",
      "kind": "inline",
      "conserved": false,
-     "value": 0.608,
+     "value": 0.5643,
      "mutable": {
       "type": "float",
       "sigma": 0.05,
@@ -388,8 +388,8 @@
      "value": {
       "hub": "huggingface",
       "kind": "model",
-      "repo": "flaukowski/kannaka-brain-v1-GGUF",
-      "revision": "57de0a12f8095c84c8f087d472b9df8ec2593686"
+      "repo": "flaukowski/kannaka-brain-7b-v1-GGUF",
+      "revision": "b9f78decb01a5d3825df79c2cd4441bef041e74d"
      },
      "mutable": {
       "type": "choice",
@@ -923,7 +923,7 @@
      "name": "default-role",
      "kind": "inline",
      "conserved": false,
-     "value": "role-scientist",
+     "value": "role-dj",
      "mutable": {
       "type": "choice",
       "alleles": [
@@ -937,5 +937,5 @@
    ]
   }
  ],
- "hash": "a611888b2c7432d777ad4ba5c0780d85c6b12b506a611ae11f691295f8a0e8a7"
+ "hash": "3af9c685ac4c626bb2116abf1231dbd6dcae1ba96021d35390f833881dc4b99a"
 }
