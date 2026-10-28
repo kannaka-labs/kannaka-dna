@@ -137,3 +137,25 @@ free qBraid simulator or a few credits on a QPU, recorded either way as what the
 
 Appended by `e001_make_arms.py` before the relay is switched on: individual, genome hash,
 phenotype parameters, and the seed source.
+
+Generated 2026-10-28T03:40:00Z from `kannaka-g0` (b9802c034dbc094b), 8 seeds tried, seed source: `{"device": "host:os.urandom", "drawn_at": "2026-10-28T03:33:42Z", "host": "DESKTOP-S5OBIAD", "n_bits": 1024, "note": "Pseudo-random host OS entropy (os.urandom), NOT a quantum draw. E-001 amendment 1: the OpenQuantum Rigetti and IQM Garnet harvests and the qBraid simulator job all stalled in queue on 2026-10-28; Nick chose to start on host randomness rather than wait.", "quantum": false}`
+
+| individual | genome | model_alias | temperature | recall_top_k | mutated genes |
+|---|---|---|---|---|---|
+| `kannaka-g1-5998bc` | `d2cc0e62d4295156` | kannaka-brain-v2 | 0.79 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-a2d250` | `395ec0eb59039c2a` | kannaka-brain-7b-v1 | 0.72 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-d3b7e4` | `a611888b2c7432d7` | kannaka-brain-v1 | 0.75 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-d188a0` | `5a0f5c21d7639fb6` | kannaka-brain-7b-v1 | 0.74 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-f6fa30` | `b34785274647f3ef` | kannaka-brain-v2 | 0.74 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-8fc997` | `6323719b42cfd556` | kannaka-brain-v2 | 0.81 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-c259f9` | `0bbcb914c3402b2d` | kannaka-brain-v2 | 0.81 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+| `kannaka-g1-3748dd` | `26eb3955e8e87889` | kannaka-brain-7b-v1 | 0.78 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+
+## Amendments
+
+**1 (2026-10-28, before switch-on).** Seeds come from host OS randomness (`os.urandom`), not a
+quantum draw. On the night of switch-on the OpenQuantum Rigetti harvest (70 min) and IQM Garnet
+harvest (25 min) never returned, and even the free qBraid simulator job stalled in its queue.
+Nick chose to start rather than wait. The seeds only choose which mutations the eight arms carry;
+nothing in the measures or decision rules depends on their source. Each arm's
+`conception.seed_source` says `host:os.urandom`, `quantum: false`.
