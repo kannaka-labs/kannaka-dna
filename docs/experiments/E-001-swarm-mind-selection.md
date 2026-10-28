@@ -151,6 +151,8 @@ Generated 2026-10-28T03:40:00Z from `kannaka-g0` (b9802c034dbc094b), 8 seeds tri
 | `kannaka-g1-c259f9` | `0bbcb914c3402b2d` | kannaka-brain-v2 | 0.81 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
 | `kannaka-g1-3748dd` | `26eb3955e8e87889` | kannaka-brain-7b-v1 | 0.78 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
 
+**Live since 2026-10-28T03:34:13Z** (relay restart on Skywave; boot line `genome dimension: 8 arms over 3 models`). Day-7 harm check due 2026-11-04; day-14 analysis due 2026-11-11: `python experiments/e001_analyze.py --verdicts /srv/grid/colony-one/verdicts --history /srv/grid/colony-one/state/history.sqlite3 --since 2026-10-28T03:34:13Z`.
+
 ## Amendments
 
 **1 (2026-10-28, before switch-on).** Seeds come from host OS randomness (`os.urandom`), not a
