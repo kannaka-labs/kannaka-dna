@@ -31,6 +31,28 @@ def _expressed(genome: Genome, role_value: dict):
     return pairs
 
 
+def brain_alias(pointer: dict) -> str:
+    """The gateway alias a brain pointer resolves to: `flaukowski/kannaka-brain-7b-v2-GGUF`
+    serves as `kannaka-brain-7b-v2`. A deterministic rule, not a lookup, so a phenotype can be
+    computed offline; whether the gateway actually serves that alias is checked at run time."""
+    name = pointer["repo"].split("/")[-1]
+    return name[:-5] if name.endswith("-GGUF") else name
+
+
+def mind_params(genome: Genome) -> dict:
+    """The sampling parameters a genome expresses when it runs as a mind (E-001).
+
+    temperature = 0.4 + 0.6 * playfulness, so the mutable range 0.3..0.8 maps to 0.58..0.88
+    and the founder's 0.55 lands at 0.73, next to the relay's 0.7 default. recall_top_k is
+    chr3-mind's gene as written. max_tokens is fixed: it is a budget, not a trait."""
+    ident = genome.chromosome("chr1-identity")
+    mind = genome.chromosome("chr3-mind")
+    brain = genome.chromosome("chr4-brain").gene("brain").value
+    return {"model_alias": brain_alias(brain), "brain_revision": brain.get("revision"),
+            "temperature": round(0.4 + 0.6 * float(ident.gene("temperament").value["playfulness"]), 2),
+            "recall_top_k": int(mind.gene("recall-top-k").value), "max_tokens": 400}
+
+
 def express(genome: Genome, role: str | None = None) -> dict:
     reg = genome.chromosome("chrR-regulation")
     role = role or reg.gene("default-role").value
@@ -70,7 +92,7 @@ def express(genome: Genome, role: str | None = None) -> dict:
         artifacts = [{"gene": "brain", "chromosome": "chr4-brain", **brain.value}]
 
     return {"genome": genome.hash, "individual": genome.individual, "role": role,
-            "persona_md": "\n".join(lines) + "\n", "memory": memory,
+            "persona_md": "\n".join(lines) + "\n", "memory": memory, "params": mind_params(genome),
             "seed_memories_sh": "\n".join(seed) + "\n", "artifacts": artifacts,
             "mito": {k: v for k, v in genome.mito.items() if k != "memory_commitment"},
             "ancestry": {"parents": genome.parents, "memory_commitment": genome.mito.get("memory_commitment")}}
