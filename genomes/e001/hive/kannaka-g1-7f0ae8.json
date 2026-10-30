@@ -17,7 +17,7 @@
  },
  "relay": "wss://buzz.ninja-portal.com",
  "genome_room": {
-  "channel": null,
+  "channel": "0a8ba6d8-f1e8-4732-80c7-dea71603b826",
   "policy": {
    "no-bridge": true
   },
@@ -25,9 +25,24 @@
  },
  "memory_lineage": "this member's lifetime in its working rooms becomes memory through kannaka remember / the hive bridge; `kdna clone --store` or `kdna mate --store` commits that store's SHA-256 into the next child's chrM",
  "unsigned_templates": {
+  "no_bridge_edit": {
+   "kind": 9002,
+   "created_at": 1793355020,
+   "content": "",
+   "tags": [
+    [
+     "h",
+     "0a8ba6d8-f1e8-4732-80c7-dea71603b826"
+    ],
+    [
+     "no-bridge",
+     "true"
+    ]
+   ]
+  },
   "lineage_announcement": {
    "kind": 30617,
-   "created_at": 1793354380,
+   "created_at": 1793355020,
    "content": "",
    "tags": [
     [
@@ -49,6 +64,10 @@
     [
      "clone",
      "https://github.com/kannaka-labs/kannaka-dna.git"
+    ],
+    [
+     "buzz-channel",
+     "0a8ba6d8-f1e8-4732-80c7-dea71603b826"
     ]
    ]
   }
