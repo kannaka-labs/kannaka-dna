@@ -201,11 +201,14 @@ Three rules carry over from the biology:
   commit the mother's store, as it is at conception, into the child's chrM (`memory_commitment`:
   SHA-256, bytes, whose, when). The commitment is in the hash, so the same mutation over a
   different lifetime is a different child.
-- **kdna never talks to a relay.** It mints and signs; registering the member is the operator's
-  `buzz-acp` / Desktop step with these files.
+- **kdna never talks to a relay.** It mints and signs; registering the member (the relay's
+  allowlist) and publishing the events are the operator's step with these files.
 
-E-001's eight arms each have a reserved identity in `genomes/e001/hive/` (public halves only,
-made by `experiments/e001_hive_identities.py`; `"registered": false` until a harness runs them).
+E-001's eight arms each have an identity in `genomes/e001/hive/` (public halves only, made by
+`experiments/e001_hive_identities.py`). Since 2026-10-30 they are registered on the Hive relay
+(`"registered": true`), and `kannaka-g1-0837b9` opened the lineage's genome room
+(`e001-genome-room`, `no-bridge`) and published the announcement plus nine conception records;
+the twelve signed events as the relay accepted them are `genomes/e001/hive/e001-genome-room.jsonl`.
 
 ---
 
