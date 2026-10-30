@@ -203,3 +203,16 @@ defects in the frozen script, both found before any verdict:
   stray label alone had contributed ~120 of the 128.8 chi² it printed.
 
 Interim numbers are not a result and are not recorded here; the day-14 run remains the verdict.
+
+**4 (2026-10-30, day 2; operational record, no change to arms, measures, tests or decision rules).**
+All three lab VMs (skywave, which runs colony-one and the arms; groundwave; debain2) stopped
+hard at 17:28:29–17:28:46Z on 2026-10-30 and came back between 18:57Z and 19:07Z, a gap of about
+90 minutes. The guests' journals end mid-heartbeat with no OOM, panic or shutdown record, so the
+stop was on the host side (Matt's Proxmox); the operator was told by Matt. On return the grid
+launcher resumed epoch 628 from its persisted state, every arm is heartbeating again, the
+`history.sqlite3` quick_check is `ok`, and the daily `grid-verdicts` settlement ran at 19:17Z
+(172 settled). Consequences for the analysis: the gap falls on all eight arms equally, so it
+cannot bias the between-arm comparison; any ticks held in memory since the last state checkpoint
+before 17:28Z are lost for every arm alike; the observation window is not extended (the day-7 and
+day-14 dates stand). The gap is recorded so a later reader does not mistake a dip in that hour for
+an effect.
