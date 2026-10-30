@@ -1,0 +1,59 @@
+{
+ "individual": "kannaka-g1-4887b5",
+ "genome": "44162c85a272e8533096a8043b5fd8218192826601960187492010d7ca4a2482",
+ "role": "role-swarm-mind",
+ "pubkey": "42aab6b1f6c429ae6a08be350dee0f2aee62cf8a54bb68e89d09cbc70f15559b",
+ "npub": "npub1g24tdv0kcs56u6sghc6smms09thx9nu22jak36yap89uwrc42kdsu6hcm7",
+ "harness": {
+  "id": "kannaka-g1-4887b5",
+  "file": "custom_harnesses/kannaka-g1-4887b5.json",
+  "command": "kannaka-acp",
+  "memory_access": "read-only (single-writer HRM policy)"
+ },
+ "secret": {
+  "file": "hive.nsec",
+  "format": "nsec (NIP-19)",
+  "note": "not in this file, not in phenotype.json; give it to the harness's secret store"
+ },
+ "relay": null,
+ "genome_room": {
+  "channel": null,
+  "policy": {
+   "no-bridge": true
+  },
+  "why": "a registry of conceptions, not a feed: no off-relay export"
+ },
+ "memory_lineage": "this member's lifetime in its working rooms becomes memory through kannaka remember / the hive bridge; `kdna clone --store` or `kdna mate --store` commits that store's SHA-256 into the next child's chrM",
+ "unsigned_templates": {
+  "lineage_announcement": {
+   "kind": 30617,
+   "created_at": 1793322786,
+   "content": "",
+   "tags": [
+    [
+     "d",
+     "kannaka-dna"
+    ],
+    [
+     "name",
+     "Kannaka lineage"
+    ],
+    [
+     "description",
+     "kannaka-dna genomes: every conception in this lineage, as committed JSON and FASTA"
+    ],
+    [
+     "web",
+     "https://github.com/kannaka-labs/kannaka-dna"
+    ],
+    [
+     "clone",
+     "https://github.com/kannaka-labs/kannaka-dna.git"
+    ]
+   ]
+  }
+ },
+ "minted": 1793322786,
+ "registered": false,
+ "experiment": "E-001"
+}

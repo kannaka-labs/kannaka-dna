@@ -1,0 +1,14 @@
+{
+  "id": "kannaka-g1-0837b9",
+  "label": "Kannaka kannaka-g1-0837b9",
+  "command": "kannaka-acp",
+  "args": [
+    "--top-k",
+    "4"
+  ],
+  "env": {
+    "KANNAKA_DATA_DIR": "~/.kannaka-e001/kannaka-g1-0837b9"
+  },
+  "installInstructionsUrl": "https://github.com/kannaka-labs/kannaka-memory",
+  "installHint": "cargo install --path . --bin kannaka-acp from kannaka-memory (kannaka-acp must resolve on PATH)"
+}
