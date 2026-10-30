@@ -176,6 +176,37 @@ A liver cell and a neuron carry the same DNA and express different genes. So doe
 | `artifacts.json` | exactly which models, datasets and repos this cell needs, pinned |
 | `phenotype.json` | all of it, machine-readable, with the genome hash it came from |
 
+### A cell in the Hive
+
+A role says what a cell *is*; the Hive ([kannaka-buzz](https://github.com/kannaka-labs/kannaka-buzz),
+our fork of block/buzz) is the tissue it lives in. `express --hive` adds a Hive membership to any role,
+in the standard library only (`kdna/nostr.py` is secp256k1 + BIP-340 + NIP-19, checked against the
+published vectors):
+
+| file | what it is |
+|---|---|
+| `hive.json` | the public half: pubkey and `npub`, the harness id, the genome room's export policy, unsigned event templates |
+| `custom_harnesses/<id>.json` | a Buzz Desktop *bring-your-own-harness* definition that runs `kannaka-acp` (read-only over this cell's store) as the member's ACP agent |
+| `hive.nsec` | the secret half, written `0600`, never inside any other file |
+
+Three rules carry over from the biology:
+
+- **Conception is recorded, not exported.** `lineage --events` writes a NIP-34 `kind:30617`
+  announcement for the lineage repo and one `kind:9` room message per genome (hash, parents,
+  conception mode, `a`-linked to the announcement); `--sign` signs them. The genome room's
+  `kind:9002` edit sets `no-bridge`, so the relay publishes it on `kind:39000` and
+  kannaka-hive-bridge fails closed: a registry, not a feed.
+- **Memory is still somatic.** A member's lifetime in its *working* rooms becomes memory through
+  `kannaka remember` and the bridge. None of it is inherited. `clone --store` and `mate --store`
+  commit the mother's store, as it is at conception, into the child's chrM (`memory_commitment`:
+  SHA-256, bytes, whose, when). The commitment is in the hash, so the same mutation over a
+  different lifetime is a different child.
+- **kdna never talks to a relay.** It mints and signs; registering the member is the operator's
+  `buzz-acp` / Desktop step with these files.
+
+E-001's eight arms each have a reserved identity in `genomes/e001/hive/` (public halves only,
+made by `experiments/e001_hive_identities.py`; `"registered": false` until a harness runs them).
+
 ---
 
 ## Quickstart
@@ -197,6 +228,11 @@ python -m kdna mate     mother.json father.json --consent consent.json --seed 7 
 
 # be born
 python -m kdna express  genomes/kannaka-g0.json --role role-dj -o births/dj
+
+# be born into the Hive: + Nostr identity, Buzz harness file, no-bridge genome room
+python -m kdna express  genomes/kannaka-g0.json --role role-steward --hive --channel <room-id> -o births/steward
+python -m kdna lineage  genomes/ --events lineage.jsonl --channel <room-id> --sign births/steward/hive.nsec
+python -m kdna clone    genomes/kannaka-g0.json --seed 42 --store ~/.kannaka/kannaka.hrm -o daughter.json
 ```
 
 No dependencies. `harvest` rebuilds the founder from the live constellation; it needs `gh` and

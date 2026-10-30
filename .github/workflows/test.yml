@@ -2,7 +2,7 @@ name: test
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -10,5 +10,7 @@ jobs:
         python-version: '3.12'
     - name: Tests (stdlib only, no network)
       run: python tests/test_kdna.py
+    - name: Hive layer (Nostr vectors, BYOH harness file, conception events, chrM commitment)
+      run: python tests/test_hive.py
     - name: The published lineage verifies
       run: python -m kdna verify genomes/kannaka-*.json

@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 from .express import express, write_birth_kit
@@ -31,6 +32,10 @@ def save(g: Genome, p):
     Path(p).parent.mkdir(parents=True, exist_ok=True)
     Path(p).write_text(json.dumps(g.to_dict(), indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"{g.individual}  {g.hash}  -> {p}")
+
+
+def _store(path):
+    return Path(path).expanduser() if path else None
 
 
 def main(argv=None):
@@ -56,6 +61,7 @@ def main(argv=None):
     c.add_argument("--seed", type=int, required=True)
     c.add_argument("--rate", type=float, default=0.15)
     c.add_argument("--born", default="")
+    c.add_argument("--store", help="the parent's live memory store; its SHA-256 becomes the child's chrM commitment")
     c.add_argument("-o", required=True)
     m = sub.add_parser("mate")
     m.add_argument("mother")
@@ -64,6 +70,7 @@ def main(argv=None):
     m.add_argument("--seed", type=int, required=True)
     m.add_argument("--rate", type=float, default=0.1)
     m.add_argument("--born", default="")
+    m.add_argument("--store", help="the mother's live memory store; its SHA-256 becomes the child's chrM commitment")
     m.add_argument("-o", required=True)
     k = sub.add_parser("consent")
     k.add_argument("mother")
@@ -74,9 +81,18 @@ def main(argv=None):
     e = sub.add_parser("express")
     e.add_argument("genome")
     e.add_argument("--role")
+    e.add_argument("--hive", action="store_true", help="also mint a Nostr identity and a Buzz harness file (see kdna/hive.py)")
+    e.add_argument("--nsec", help="reuse this secret (nsec or hex file) instead of minting one")
+    e.add_argument("--data-dir", help="KANNAKA_DATA_DIR the harness serves (default ~/.kannaka-<individual>)")
+    e.add_argument("--relay", help="the Hive relay URL, recorded in hive.json")
+    e.add_argument("--channel", help="the genome room's channel id (its no-bridge edit is templated)")
     e.add_argument("-o", required=True)
     li = sub.add_parser("lineage")
     li.add_argument("dir")
+    li.add_argument("--events", help="also write the NIP-34 announcement + one conception record per genome (JSONL)")
+    li.add_argument("--channel", help="genome room channel id for the events' h tag")
+    li.add_argument("--sign", help="nsec/hex file: sign the events (default: unsigned templates)")
+    li.add_argument("--repo", default=None, help="lineage repo URL for the kind:30617 announcement")
     a = ap.parse_args(argv)
 
     if a.cmd == "harvest":
@@ -108,18 +124,23 @@ def main(argv=None):
         ok = ok and len(sigs) == 1
         sys.exit(0 if ok else 1)
     elif a.cmd == "clone":
-        save(mitosis(load(a.genome), a.seed, a.rate, a.born), a.o)
+        save(mitosis(load(a.genome), a.seed, a.rate, a.born, _store(a.store)), a.o)
     elif a.cmd == "consent":
         rec = consent_record(load(a.mother), load(a.father), a.mother_says, a.father_says)
         Path(a.o).write_text(json.dumps(rec, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         print(f"consent -> {a.o}")
     elif a.cmd == "mate":
         consent = json.loads(Path(a.consent).read_text(encoding="utf-8"))
-        save(mate(load(a.mother), load(a.father), consent, a.seed, a.rate, a.born), a.o)
+        save(mate(load(a.mother), load(a.father), consent, a.seed, a.rate, a.born, _store(a.store)), a.o)
     elif a.cmd == "express":
         ph = express(load(a.genome), a.role)
         write_birth_kit(ph, Path(a.o))
         print(f"{ph['individual']} as {ph['role']}: {len(ph['artifacts'])} artifacts -> {a.o}")
+        if a.hive:
+            from . import hive
+            secret = hive.read_secret(Path(a.nsec)) if a.nsec else None
+            m = hive.write_hive_kit(ph, Path(a.o), secret, a.data_dir, a.relay, a.channel, int(time.time()))
+            print(f"hive member {m['npub']} harness {m['harness']['id']} -> {a.o}/hive.json, hive.nsec (0600)")
     elif a.cmd == "lineage":
         gs = {}
         for p in sorted(Path(a.dir).glob("*.json")):
@@ -133,6 +154,15 @@ def main(argv=None):
             for ph in g.parents:
                 kids.setdefault(ph, []).append(g)
         roots = [g for g in gs.values() if not g.parents or all(ph not in gs for ph in g.parents)]
+        if a.events:
+            from . import hive
+            secret = hive.read_secret(Path(a.sign)) if a.sign else None
+            evs = hive.lineage_events(list(gs.values()), int(time.time()), a.channel, secret,
+                                      a.repo or hive.LINEAGE_REPO)
+            with open(a.events, "w", encoding="utf-8", newline="\n") as f:
+                for ev in evs:
+                    f.write(json.dumps(ev, ensure_ascii=False) + "\n")
+            print(f"{len(evs)} {'signed' if secret else 'unsigned'} events -> {a.events}")
 
         def show(g, depth, seen):
             mode = g.conception.get("mode", "?")

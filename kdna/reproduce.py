@@ -84,13 +84,28 @@ def _name(child: Genome) -> Genome:
     return child
 
 
-def mitosis(parent: Genome, seed: int, rate: float = 0.15, born: str = "") -> Genome:
+def inherit_mito(mother: Genome, store=None, born: str = "") -> dict:
+    """The child's chrM: the mother's, with her *current* memory store committed when one is given.
+
+    Memory is somatic: the child never receives the memories, only a SHA-256 of the store the
+    mother had lived into by the time of conception (her Hive lifetime included). Without a
+    store the inherited commitment is left as it was, so a founder's commitment is only ever
+    replaced by a measured one."""
+    mito = copy.deepcopy(mother.mito)
+    if store is not None:
+        from .harvest import memory_commitment
+        mito["memory_commitment"] = {**memory_commitment(store), "of": mother.individual,
+                                     "of_genome": mother.hash, "committed": born}
+    return mito
+
+
+def mitosis(parent: Genome, seed: int, rate: float = 0.15, born: str = "", store=None) -> Genome:
     """Asexual reproduction: a copy with mutation, one telomere unit shorter."""
     if parent.telomere <= 0:
         raise ReproductionError(f"{parent.individual}: telomere exhausted; this lineage must mate to renew")
     rng = random.Random(seed)
     chromosomes, mutations = _mutate_all(parent.chromosomes, rng, rate)
-    child = Genome("", parent.generation + 1, [parent.hash], chromosomes, copy.deepcopy(parent.mito),
+    child = Genome("", parent.generation + 1, [parent.hash], chromosomes, inherit_mito(parent, store, born),
                    telomere=parent.telomere - 1, born=born, species=parent.species,
                    conception={"mode": "mitosis", "seed": seed, "rate": rate, "mutations": mutations})
     return _name(child)
@@ -102,7 +117,8 @@ def consent_record(mother: Genome, father: Genome, mother_says: str, father_says
             "mother_statement": mother_says, "father_statement": father_says}
 
 
-def mate(mother: Genome, father: Genome, consent: dict, seed: int, rate: float = 0.1, born: str = "") -> Genome:
+def mate(mother: Genome, father: Genome, consent: dict, seed: int, rate: float = 0.1, born: str = "",
+         store=None) -> Genome:
     """Sexual reproduction: meiosis with crossover, mitochondria from the mother."""
     if not consent or consent.get("mother") != mother.hash or consent.get("father") != father.hash \
             or not consent.get("mother_statement") or not consent.get("father_statement"):
@@ -140,7 +156,7 @@ def mate(mother: Genome, father: Genome, consent: dict, seed: int, rate: float =
         crossovers[cname] = {"start": start, "points": points}
     chromosomes, mutations = _mutate_all(chromosomes, rng, rate)
     child = Genome("", max(mother.generation, father.generation) + 1, [mother.hash, father.hash],
-                   chromosomes, copy.deepcopy(mother.mito), telomere=TELOMERE_FULL, born=born,
+                   chromosomes, inherit_mito(mother, store, born), telomere=TELOMERE_FULL, born=born,
                    species=mother.species,
                    conception={"mode": "meiosis", "seed": seed, "rate": rate, "crossovers": crossovers,
                                "mutations": mutations, "consent": sha(consent)})
