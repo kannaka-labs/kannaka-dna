@@ -185,3 +185,21 @@ Generated 2026-10-28T04:20:00Z from `kannaka-g0` (b9802c034dbc094b), 21 seeds tr
 | `kannaka-g1-2cb7a2` | `5ab3a9f79d8c5eef` | kannaka-brain-7b-v1 | 0.71 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
 | `kannaka-g1-4887b5` | `44162c85a272e853` | kannaka-brain-v3 | 0.67 | 6 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
 | `kannaka-g1-3672b0` | `3af9c685ac4c626b` | kannaka-brain-7b-v1 | 0.74 | 4 | temperament.playfulness; voice-style.register; speaking-rate; recall-top-k; dream-interval-hours; dream-mode; default-importance; brain; default-role |
+
+**3 (2026-10-30, day 2; analysis script only, no change to measures, tests or decision rules).**
+An interim health run of `e001_analyze.py` on debain1 printed a ninth arm, `kannaka-g1-3748dd`
+(one of amendment 2's superseded arms) with one row, and then skipped both pre-registered tests
+("fewer than 2 arms with >= 20 scorable rows") although every registered arm had 77–109. Two
+defects in the frozen script, both found before any verdict:
+
+- `iso_ms` converted `--since` with `time.mktime(...) - time.timezone`, which is one hour early
+  on a host in daylight-saving time (debain1 is Central; `mktime` applies the DST offset,
+  `time.timezone` is the standard one). The 03:53:50Z cutoff became 02:53:50Z and let the
+  superseded arm's 03:36:51Z row back in. Fixed with `calendar.timegm`.
+- The `>= 20 rows per arm` gate ranged over every label in the window, so a single stray row
+  could switch the tests off. The script now reads the registered arms from `genomes/e001/*.json`
+  (`--arms`), reports and excludes rows carrying any other label, and applies the gate to the
+  registered arms only. The interleaving chi-square likewise runs over the registered arms; the
+  stray label alone had contributed ~120 of the 128.8 chi² it printed.
+
+Interim numbers are not a result and are not recorded here; the day-14 run remains the verdict.
