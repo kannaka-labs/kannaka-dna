@@ -10,8 +10,9 @@ For every genome in genomes/e001/*.json this mints one Nostr key pair and writes
 
 Idempotent: an arm whose .nsec already exists keeps its key, so re-running never rotates an
 identity by accident. Nothing here talks to a relay; registering the eight members is the
-operator's buzz-acp / Desktop step with these files. Until then the identities are reserved,
-not live, and the public file says so (`"registered": false`).
+operator's step (the relay's `pubkey_allowlist`, both communities, like the organs). Until then
+the identities are reserved, not live, and the public file says so (`"registered": false`).
+Once done, re-run with `--relay wss://… --registered YYYY-MM-DD` to record it in the public files.
 """
 from __future__ import annotations
 
@@ -34,7 +35,11 @@ def main(argv=None):
     ap.add_argument("--data-root", default="~/.kannaka-e001", help="each arm's KANNAKA_DATA_DIR is <root>/<individual>")
     ap.add_argument("--relay", default=None)
     ap.add_argument("--channel", default=None, help="the E-001 genome room's channel id, if it exists yet")
+    ap.add_argument("--registered", default=None, metavar="YYYY-MM-DD",
+                    help="the operator has added these pubkeys to the relay's allowlist on this date (requires --relay)")
     a = ap.parse_args(argv)
+    if a.registered and not a.relay:
+        ap.error("--registered needs --relay (which relay were they registered on?)")
 
     arms = sorted((ROOT / "genomes" / "e001").glob("kannaka-g1-*.json"))
     pub_dir = ROOT / "genomes" / "e001" / "hive"
@@ -56,7 +61,15 @@ def main(argv=None):
             (kit / "hive.nsec").replace(nsec_path)
         else:
             (kit / "hive.nsec").unlink()
-        m["registered"] = False
+        prior_path = pub_dir / f"{g.individual}.json"
+        if prior_path.exists():  # re-run: the key was minted when the file first appeared, not now
+            prior = json.loads(prior_path.read_text(encoding="utf-8"))
+            if prior.get("npub") == m["npub"] and "minted" in prior:
+                m["minted"] = prior["minted"]
+        m["registered"] = bool(a.registered)
+        if a.registered:
+            m["registered_at"] = a.registered
+            m["registration"] = "relay pubkey_allowlist (NIP-42 gate), both communities; not the NIP-43 member roster"
         m["experiment"] = "E-001"
         (pub_dir / f"{g.individual}.json").write_text(json.dumps(m, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         hd = kit / "custom_harnesses" / f"{m['harness']['id']}.json"

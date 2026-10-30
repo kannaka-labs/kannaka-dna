@@ -15,7 +15,7 @@
   "format": "nsec (NIP-19)",
   "note": "not in this file, not in phenotype.json; give it to the harness's secret store"
  },
- "relay": null,
+ "relay": "wss://buzz.ninja-portal.com",
  "genome_room": {
   "channel": null,
   "policy": {
@@ -27,7 +27,7 @@
  "unsigned_templates": {
   "lineage_announcement": {
    "kind": 30617,
-   "created_at": 1793322786,
+   "created_at": 1793354380,
    "content": "",
    "tags": [
     [
@@ -54,6 +54,8 @@
   }
  },
  "minted": 1793322786,
- "registered": false,
+ "registered": true,
+ "registered_at": "2026-10-30",
+ "registration": "relay pubkey_allowlist (NIP-42 gate), both communities; not the NIP-43 member roster",
  "experiment": "E-001"
 }
