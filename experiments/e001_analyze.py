@@ -13,6 +13,7 @@ a chi-square against uniform, the interleaving check.
 from __future__ import annotations
 
 import argparse
+import calendar
 import json
 import math
 import random
@@ -24,6 +25,7 @@ from pathlib import Path
 POSITIVE = {"reproduced", "growing", "enduring", "established"}
 EXCLUDED = {"preexisting", "unknown", "rejected"}
 PERMS = 10_000
+REGISTERED_ARMS_DIR = Path(__file__).resolve().parent.parent / "genomes" / "e001"
 
 
 def read_jsonl(p: Path):
@@ -37,7 +39,22 @@ def read_jsonl(p: Path):
 
 
 def iso_ms(s: str) -> int:
-    return int(time.mktime(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ")) - time.timezone) * 1000
+    # calendar.timegm, not mktime - time.timezone: the latter is off by an hour on a host in
+    # daylight-saving time (amendment 3; debain1 runs Central time).
+    return calendar.timegm(time.strptime(s, "%Y-%m-%dT%H:%M:%SZ")) * 1000
+
+
+def registered_arms(d: Path) -> set[str]:
+    """Individuals named by the registered arm files, or empty when the directory is absent."""
+    if not d.is_dir():
+        return set()
+    out = set()
+    for f in sorted(d.glob("*.json")):
+        try:
+            out.add(json.loads(f.read_text(encoding="utf-8"))["individual"])
+        except (ValueError, KeyError, OSError):
+            continue
+    return out
 
 
 def perm_test(groups: dict, stat, rng: random.Random, n=PERMS) -> tuple[float, float]:
@@ -69,15 +86,25 @@ def main():
     ap.add_argument("--history", required=True)
     ap.add_argument("--since", required=True, help="ISO UTC, the moment the arms went live")
     ap.add_argument("--until", default=None)
+    ap.add_argument("--arms", default=str(REGISTERED_ARMS_DIR),
+                    help="directory of the registered arm genomes; rows labelled with any other "
+                         "individual are reported and excluded (amendment 3)")
     a = ap.parse_args()
     since_ms = iso_ms(a.since)
     until_ms = iso_ms(a.until) if a.until else None
     vd = Path(a.verdicts)
+    arms_set = registered_arms(Path(a.arms))
 
-    props = {e["request_id"]: e for e in read_jsonl(vd / "proposals.jsonl")
-             if e.get("genome") and since_ms <= e.get("ts", 0) <= (until_ms or 1 << 62)}
+    in_window = [e for e in read_jsonl(vd / "proposals.jsonl")
+                 if e.get("genome") and since_ms <= e.get("ts", 0) <= (until_ms or 1 << 62)]
+    strays = Counter(e["genome"] for e in in_window if arms_set and e["genome"] not in arms_set)
+    props = {e["request_id"]: e for e in in_window if not strays or e["genome"] not in strays}
     verdicts = [r for r in read_jsonl(vd / "verdicts.jsonl") if r.get("request_id") in props]
     print(f"arms' proposal-log rows: {len(props)}; settled verdicts among them: {len(verdicts)}")
+    if arms_set:
+        print(f"registered arms: {len(arms_set)} from {a.arms}")
+    for g, n in sorted(strays.items()):
+        print(f"excluded: {n} row(s) labelled {g}, not a registered arm")
 
     per = defaultdict(lambda: Counter())
     scorable = defaultdict(list)
