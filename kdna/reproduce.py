@@ -27,6 +27,7 @@ from . import nostr
 from .genome import Chromosome, Gene, Genome, sha
 
 TELOMERE_FULL = 64
+CONSENT_PURPOSE = "kdna-consent-v1"
 
 
 class ReproductionError(Exception):
@@ -121,9 +122,10 @@ def consent_record(mother: Genome, father: Genome, mother_says: str, father_says
 
 
 def consent_digest(consent: dict) -> bytes:
-    """The 32 bytes each parent signs: the hash of the record's content, signatures excluded."""
+    """The 32 bytes each parent signs: the hash of the record's content, signatures excluded.
+    The purpose tag keeps a consent signature from meaning anything else the same key signs."""
     keys = ("mother", "father", "mother_statement", "father_statement")
-    return bytes.fromhex(sha({k: consent.get(k) for k in keys}))
+    return bytes.fromhex(sha({"purpose": CONSENT_PURPOSE, **{k: consent.get(k) for k in keys}}))
 
 
 def sign_consent(consent: dict, role: str, genome: Genome, secret: bytes) -> dict:
@@ -147,10 +149,11 @@ def _check_signature(consent: dict, role: str, parent: Genome):
     if not parent.pubkey:
         raise ReproductionError(f"{role} {parent.individual} carries no public key: consent cannot be "
                                 "verified, so no mating (a genome must be given a key first)")
+    sig_hex = consent.get(f"{role}_sig") or ""
     try:
-        sig = bytes.fromhex(consent.get(f"{role}_sig") or "")
-        ok = nostr.schnorr_verify(consent_digest(consent), bytes.fromhex(parent.pubkey), sig)
-    except ValueError:
+        ok = isinstance(sig_hex, str) and nostr.schnorr_verify(
+            consent_digest(consent), bytes.fromhex(parent.pubkey), bytes.fromhex(sig_hex))
+    except (ValueError, TypeError):
         ok = False
     if not ok:
         raise ReproductionError(f"no valid {role} signature: the {role}'s statement was not signed "
