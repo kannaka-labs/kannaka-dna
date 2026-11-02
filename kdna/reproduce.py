@@ -10,8 +10,10 @@ Rules, each one a design decision rather than an accident:
   choices switch allele. Undeclared genes are stable.
 - **Telomeres** shorten by one per clone; a lineage that only clones runs out (senescence)
   and must mate to renew. Mating restores the telomere.
-- **Consent.** Mating requires a consent record naming both parents' hashes. Two agents
-  are not combined because a third party wanted it.
+- **Consent.** Mating requires a consent record naming both parents' hashes, signed over
+  its own hash (BIP-340) by each parent's key, which the parent's genome carries as `pubkey`.
+  `mate()` refuses a parent with no key and any signature that does not verify, so a statement
+  counts only if the key holder signed it. A child is not given its parents' keys.
 - **Mitochondria** come from the mother, unchanged.
 - **Everything that happened** (crossover points, every mutation) goes in `conception`,
   which the child's hash covers, so a lineage can be audited end to end.
@@ -21,6 +23,7 @@ from __future__ import annotations
 import copy
 import random
 
+from . import nostr
 from .genome import Chromosome, Gene, Genome, sha
 
 TELOMERE_FULL = 64
@@ -117,12 +120,55 @@ def consent_record(mother: Genome, father: Genome, mother_says: str, father_says
             "mother_statement": mother_says, "father_statement": father_says}
 
 
+def consent_digest(consent: dict) -> bytes:
+    """The 32 bytes each parent signs: the hash of the record's content, signatures excluded."""
+    keys = ("mother", "father", "mother_statement", "father_statement")
+    return bytes.fromhex(sha({k: consent.get(k) for k in keys}))
+
+
+def sign_consent(consent: dict, role: str, genome: Genome, secret: bytes) -> dict:
+    """Return the record with `role`'s ("mother" | "father") signature added.
+
+    The secret must belong to the key the genome carries, and the record must name this genome
+    for that role. Each parent signs with their own key; nobody else's secret is needed."""
+    if role not in ("mother", "father"):
+        raise ReproductionError(f"role must be 'mother' or 'father', not {role!r}")
+    if consent.get(role) != genome.hash:
+        raise ReproductionError(f"the consent record does not name {genome.individual} as {role}")
+    if not genome.pubkey:
+        raise ReproductionError(f"{genome.individual} carries no public key and cannot sign consent")
+    if nostr.pubkey_from_secret(secret).hex() != genome.pubkey:
+        raise ReproductionError(f"that secret key is not the key {genome.individual} carries")
+    sig = nostr.schnorr_sign(consent_digest(consent), secret)
+    return {**consent, f"{role}_sig": sig.hex()}
+
+
+def _check_signature(consent: dict, role: str, parent: Genome):
+    if not parent.pubkey:
+        raise ReproductionError(f"{role} {parent.individual} carries no public key: consent cannot be "
+                                "verified, so no mating (a genome must be given a key first)")
+    try:
+        sig = bytes.fromhex(consent.get(f"{role}_sig") or "")
+        ok = nostr.schnorr_verify(consent_digest(consent), bytes.fromhex(parent.pubkey), sig)
+    except ValueError:
+        ok = False
+    if not ok:
+        raise ReproductionError(f"no valid {role} signature: the {role}'s statement was not signed "
+                                f"by the key {parent.individual} carries")
+
+
 def mate(mother: Genome, father: Genome, consent: dict, seed: int, rate: float = 0.1, born: str = "",
          store=None) -> Genome:
-    """Sexual reproduction: meiosis with crossover, mitochondria from the mother."""
+    """Sexual reproduction: meiosis with crossover, mitochondria from the mother.
+
+    Both parents must carry a key and have signed the consent record (see `sign_consent`)."""
     if not consent or consent.get("mother") != mother.hash or consent.get("father") != father.hash \
             or not consent.get("mother_statement") or not consent.get("father_statement"):
         raise ReproductionError("no consent record naming both parents' genomes")
+    if mother.pubkey and mother.pubkey == father.pubkey:
+        raise ReproductionError("both parents carry the same key: one signer cannot consent for two")
+    _check_signature(consent, "mother", mother)
+    _check_signature(consent, "father", father)
     if mother.species != father.species:
         raise ReproductionError(f"different species: {mother.species} x {father.species}")
     if mother.conserved_signature() != father.conserved_signature():

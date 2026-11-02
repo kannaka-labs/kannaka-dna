@@ -18,6 +18,7 @@ Biology mapping, kept honest about where it is a metaphor:
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -89,15 +90,19 @@ class Genome:
     species: str = SPECIES
     notes: str = ""
     conception: dict = field(default_factory=dict)   # how this individual came to be (hashed)
+    pubkey: str = ""         # x-only BIP-340 key (64 hex) the individual signs consent with; hashed when set
 
     def body(self):
         """Everything that defines the individual (the hash covers exactly this)."""
-        return {
+        body = {
             "format": FORMAT, "species": self.species, "individual": self.individual,
             "generation": self.generation, "parents": self.parents, "telomere": self.telomere,
             "born": self.born, "mito": self.mito, "conception": self.conception,
             "chromosomes": [c.to_dict() for c in self.chromosomes],
         }
+        if self.pubkey:      # omitted when unset, so genomes minted before keys existed keep their hashes
+            body["pubkey"] = self.pubkey
+        return body
 
     @property
     def hash(self) -> str:
@@ -115,9 +120,18 @@ class Genome:
         g = Genome(d["individual"], d["generation"], d["parents"],
                    [Chromosome.from_dict(c) for c in d["chromosomes"]], d["mito"],
                    d.get("telomere", 64), d.get("born", ""), d.get("species", SPECIES), d.get("notes", ""),
-                   d.get("conception", {}))
+                   d.get("conception", {}), d.get("pubkey", ""))
         if verify and "hash" in d and d["hash"] != g.hash:
             raise ValueError(f"genome hash mismatch: file says {d['hash'][:12]}, content is {g.hash[:12]}")
+        return g
+
+    def with_pubkey(self, pubkey_hex: str) -> "Genome":
+        """A copy that carries this public key. The key is part of the hash, so this is a new hash
+        (the individual's name is left as it was). Only the public half ever goes in a genome."""
+        if len(pubkey_hex) != 64 or any(c not in "0123456789abcdef" for c in pubkey_hex):
+            raise ValueError("pubkey must be 64 lowercase hex characters (x-only, 32 bytes)")
+        g = copy.deepcopy(self)
+        g.pubkey = pubkey_hex
         return g
 
     def chromosome(self, name):
@@ -185,5 +199,5 @@ def from_fasta(text: str) -> Genome:
     chromosomes = [Chromosome(n, [g for _, g in sorted(gs, key=lambda x: x[0])]) for n, gs in chroms.items()]
     g = Genome(meta["individual"], meta["generation"], meta["parents"], chromosomes, mito,
                meta.get("telomere", 64), meta.get("born", ""), meta.get("species", SPECIES),
-               conception=meta.get("conception", {}))
+               conception=meta.get("conception", {}), pubkey=meta.get("pubkey", ""))
     return g
