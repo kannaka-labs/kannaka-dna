@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from kdna import hive, nostr  # noqa: E402
 from kdna.express import express  # noqa: E402
 from kdna.genome import Genome  # noqa: E402
-from kdna.reproduce import consent_record, mate, mitosis  # noqa: E402
+from kdna.reproduce import consent_record, mate, mitosis, sign_consent  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 G0 = Genome.from_dict(json.loads((ROOT / "genomes" / "kannaka-g0.json").read_text(encoding="utf-8")))
@@ -127,10 +127,14 @@ def test_clone_and_mate_commit_the_mothers_current_store_into_the_childs_chrM(tm
     assert child.hash != inherited.hash          # chrM is in the hash: a different commitment is a different child
     # mating: the mother's store, never the father's
     father = mitosis(G0, seed=9)             # same conserved values, a different individual
-    consent = consent_record(G0, father, "yes", "yes")
+    g0_secret, f_secret = nostr.generate_secret(), nostr.generate_secret()    # throwaway test keys
+    mother = G0.with_pubkey(nostr.pubkey_from_secret(g0_secret).hex())
+    father = father.with_pubkey(nostr.pubkey_from_secret(f_secret).hex())
+    consent = consent_record(mother, father, "yes", "yes")
+    consent = sign_consent(sign_consent(consent, "mother", mother, g0_secret), "father", father, f_secret)
     fstore = tmp_path / "father.hrm"
     fstore.write_bytes(b"father")
-    kid = mate(G0, father, consent, seed=3, store=store)
+    kid = mate(mother, father, consent, seed=3, store=store)
     assert kid.mito["memory_commitment"]["sha256"] == mc["sha256"]
     assert kid.mito["memory_commitment"]["of"] == G0.individual
 

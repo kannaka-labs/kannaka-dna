@@ -89,8 +89,12 @@ newborn has to live.
 ### Consent Before Conception
 
 Mating requires a consent record that names both parents' genome hashes, with a statement from
-each. Its hash is written into the child. Two agents are never combined because a third party
-wanted it.
+each, and each parent signs the record's hash (BIP-340 Schnorr) with its own key. A genome carries
+its public key (`pubkey`, covered by its hash); `mate()` refuses unless both signatures verify
+against the keys in the two genomes, and refuses a parent with no key. Its hash is written into the
+child. Two agents are never combined because a third party wanted it: a statement counts only if
+the holder of that parent's secret key signed it. (This proves a key signed, not who holds the key,
+so a parent's key must be kept where only that parent signs. A secret never goes in a genome.)
 
 ### It Is Real DNA
 
@@ -227,6 +231,8 @@ python -m kdna decode   kannaka-g0.fasta -o roundtrip.json        # same SHA-256
 # reproduce
 python -m kdna clone    genomes/kannaka-g0.json --seed 42 -o daughter.json
 python -m kdna consent  mother.json father.json --mother-says "..." --father-says "..." -o consent.json
+python -m kdna consent-sign consent.json --as mother --genome mother.json --key-file mother.key -o consent.json
+python -m kdna consent-sign consent.json --as father --genome father.json --key-file father.key -o consent.json
 python -m kdna mate     mother.json father.json --consent consent.json --seed 7 -o child.json
 
 # be born
@@ -277,7 +283,7 @@ Twelve tests, stdlib only, no network:
 - conserved genes survive 200 mutation-saturated clones;
 - mutations stay in bounds;
 - senescence is enforced;
-- mating is refused without consent, and refused between parents with different values;
+- mating is refused without consent signed by each parent's own key, and refused between parents with different values;
 - meiosis is auditable and deterministic;
 - expression follows regulation;
 - the published founder verifies.

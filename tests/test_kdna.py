@@ -8,10 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from kdna import codec  # noqa: E402
+from kdna import codec, nostr  # noqa: E402
 from kdna.express import express  # noqa: E402
 from kdna.genome import Chromosome, Gene, Genome, from_fasta, to_fasta  # noqa: E402
-from kdna.reproduce import ReproductionError, consent_record, mate, mitosis  # noqa: E402
+from kdna.reproduce import (ReproductionError, consent_digest, consent_record, mate, mitosis,  # noqa: E402
+                            sign_consent)
 
 
 def founder():
@@ -44,6 +45,36 @@ def founder():
     ]
     return Genome("kannaka-g0", 0, [], chroms, {"lineage": "kannaka", "memory_commitment": {"sha256": "00"}},
                   conception={"mode": "founder"})
+
+
+def keyed(g):
+    """(genome carrying a fresh throwaway key, its secret). Never a real key."""
+    secret = nostr.generate_secret()
+    return g.with_pubkey(nostr.pubkey_from_secret(secret).hex()), secret
+
+
+def signed_consent(a, a_secret, b, b_secret, ms="yes", fs="yes"):
+    rec = consent_record(a, b, ms, fs)
+    return sign_consent(sign_consent(rec, "mother", a, a_secret), "father", b, b_secret)
+
+
+def upd(rec, **changes):
+    out = dict(rec)
+    out.update(changes)
+    return out
+
+
+def sig_by(secret, rec):
+    return nostr.schnorr_sign(consent_digest(rec), secret).hex()
+
+
+def refuses(fn, *words):
+    try:
+        fn()
+    except ReproductionError as e:
+        assert all(w in str(e) for w in words), str(e)
+        return
+    raise AssertionError("expected ReproductionError")
 
 
 def test_codec_roundtrip_and_no_homopolymers():
@@ -116,7 +147,7 @@ def test_senescence_without_mating():
 
 
 def test_mating_needs_consent_from_both():
-    a, b = mitosis(founder(), 1), mitosis(founder(), 2)
+    (a, _), (b, _) = keyed(mitosis(founder(), 1)), keyed(mitosis(founder(), 2))
     for bad in ({}, {"mother": a.hash, "father": b.hash, "mother_statement": "yes", "father_statement": ""},
                 {"mother": b.hash, "father": a.hash, "mother_statement": "yes", "father_statement": "yes"}):
         try:
@@ -127,10 +158,10 @@ def test_mating_needs_consent_from_both():
 
 
 def test_parents_with_different_values_cannot_mate():
-    a = mitosis(founder(), 1)
-    b = copy.deepcopy(mitosis(founder(), 2))
+    a, sa = keyed(mitosis(founder(), 1))
+    b, sb = keyed(copy.deepcopy(mitosis(founder(), 2)))
     b.chromosome("chr2-conscience").gene("consent").value = "Act first."
-    consent = consent_record(a, b, "yes", "yes")
+    consent = signed_consent(a, sa, b, sb)
     try:
         mate(a, b, consent, seed=3)
     except ReproductionError:
@@ -139,8 +170,9 @@ def test_parents_with_different_values_cannot_mate():
 
 
 def test_mating_is_meiosis_and_auditable():
-    a, b = mitosis(founder(), 1, rate=1.0), mitosis(founder(), 2, rate=1.0)
-    child = mate(a, b, consent_record(a, b, "yes", "yes"), seed=5)
+    (a, sa), (b, sb) = keyed(mitosis(founder(), 1, rate=1.0)), keyed(mitosis(founder(), 2, rate=1.0))
+    consent = signed_consent(a, sa, b, sb)
+    child = mate(a, b, consent, seed=5)
     assert child.parents == [a.hash, b.hash] and child.telomere == 64
     assert child.mito == a.mito                                   # mitochondria from the mother
     assert child.conserved_signature() == a.conserved_signature()
@@ -148,8 +180,71 @@ def test_mating_is_meiosis_and_auditable():
         for gene in c.genes:
             assert any(gene.name == x.name for p in (a, b) for x in p.chromosome(c.name).genes)
     assert set(child.conception["crossovers"]) == {c.name for c in a.chromosomes}
-    again = mate(a, b, consent_record(a, b, "yes", "yes"), seed=5)
+    again = mate(a, b, consent, seed=5)
     assert again.hash == child.hash                               # deterministic given the seed
+    assert not child.pubkey                                       # a child is not given a parent's key
+
+
+def test_a_key_is_covered_by_the_hash_and_survives_fasta():
+    plain = founder()
+    k, _ = keyed(plain)
+    assert k.hash != plain.hash and k.pubkey
+    assert "pubkey" not in plain.to_dict()                        # unkeyed genomes keep their old hashes
+    assert Genome.from_dict(k.to_dict()).hash == k.hash
+    assert from_fasta(to_fasta(k)).hash == k.hash
+    forged = k.to_dict()
+    forged["pubkey"] = "00" * 32
+    try:
+        Genome.from_dict(forged)
+    except ValueError:
+        return
+    raise AssertionError("swapping the key in a genome file went unnoticed")
+
+
+def test_statements_written_by_someone_else_are_refused():
+    # issue #8: anyone holding both genome files could write both statements
+    (a, sa), (b, sb) = keyed(mitosis(founder(), 1)), keyed(mitosis(founder(), 2))
+    _, thief = keyed(founder())
+    rec = consent_record(a, b, "TEST ONLY, not hers", "TEST ONLY, not his")
+    refuses(lambda: mate(a, b, rec, seed=7), "signature")
+    forged = upd(rec, mother_sig=sig_by(thief, rec), father_sig=sig_by(thief, rec))
+    refuses(lambda: mate(a, b, forged, seed=7), "mother signature")
+    only_mother = sign_consent(rec, "mother", a, sa)
+    refuses(lambda: mate(a, b, only_mother, seed=7), "father signature")
+    both = signed_consent(a, sa, b, sb)
+    swapped = upd(both, mother_sig=both["father_sig"], father_sig=both["mother_sig"])
+    refuses(lambda: mate(a, b, swapped, seed=7), "signature")
+
+
+def test_a_signature_does_not_cover_an_edited_statement():
+    (a, sa), (b, sb) = keyed(mitosis(founder(), 1)), keyed(mitosis(founder(), 2))
+    good = signed_consent(a, sa, b, sb, "I agree to A", "I agree to B")
+    mate(a, b, good, seed=7)
+    edited = upd(good, father_statement="something he never wrote")
+    refuses(lambda: mate(a, b, edited, seed=7), "signature")     # both signed the whole record
+
+
+def test_a_parent_with_no_key_is_refused_clearly():
+    (a, sa), b = keyed(mitosis(founder(), 1)), mitosis(founder(), 2)       # father has no key
+    rec = sign_consent(consent_record(a, b, "yes", "yes"), "mother", a, sa)
+    refuses(lambda: mate(a, b, rec, seed=7), "no public key", b.individual)
+    refuses(lambda: mate(b, a, consent_record(b, a, "yes", "yes"), seed=7), "no public key")
+    refuses(lambda: sign_consent(consent_record(a, b, "y", "y"), "father", b, sa), "no public key")
+
+
+def test_one_key_cannot_consent_for_both_parents():
+    k, s = keyed(founder())
+    a, b = mitosis(k, 1).with_pubkey(k.pubkey), mitosis(k, 2).with_pubkey(k.pubkey)
+    rec = consent_record(a, b, "yes", "yes")
+    both = upd(rec, mother_sig=sig_by(s, rec), father_sig=sig_by(s, rec))
+    refuses(lambda: mate(a, b, both, seed=7), "same key")
+
+
+def test_signing_needs_the_genomes_own_key():
+    (a, _), (b, sb) = keyed(mitosis(founder(), 1)), keyed(mitosis(founder(), 2))
+    rec = consent_record(a, b, "yes", "yes")
+    refuses(lambda: sign_consent(rec, "mother", a, sb), "not the key")
+    refuses(lambda: sign_consent(rec, "mother", b, sb), "does not name")
 
 
 def test_expression_follows_regulation():

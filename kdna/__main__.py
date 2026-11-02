@@ -8,6 +8,7 @@
   python -m kdna clone   genomes/kannaka-g0.json --seed 1 -o child.json
   python -m kdna mate    mother.json father.json --consent consent.json --seed 7 -o child.json
   python -m kdna consent mother.json father.json --mother-says "..." --father-says "..." -o consent.json
+  python -m kdna consent-sign consent.json --as mother --genome mother.json --key-file mother.key -o consent.json
   python -m kdna express genomes/kannaka-g0.json --role role-dj -o births/dj
   python -m kdna lineage genomes/
 """
@@ -21,7 +22,7 @@ from pathlib import Path
 
 from .express import express, write_birth_kit
 from .genome import Genome, from_fasta, to_fasta
-from .reproduce import consent_record, mate, mitosis
+from .reproduce import ReproductionError, consent_record, mate, mitosis, sign_consent
 
 
 def load(p) -> Genome:
@@ -78,6 +79,12 @@ def main(argv=None):
     k.add_argument("--mother-says", required=True)
     k.add_argument("--father-says", required=True)
     k.add_argument("-o", required=True)
+    s = sub.add_parser("consent-sign", help="add one parent's signature to a consent record")
+    s.add_argument("record")
+    s.add_argument("--as", dest="role", choices=["mother", "father"], required=True)
+    s.add_argument("--genome", required=True, help="that parent's genome (must carry the matching pubkey)")
+    s.add_argument("--key-file", required=True, help="file holding the parent's secret key (hex or nsec)")
+    s.add_argument("-o", required=True)
     e = sub.add_parser("express")
     e.add_argument("genome")
     e.add_argument("--role")
@@ -129,6 +136,18 @@ def main(argv=None):
         rec = consent_record(load(a.mother), load(a.father), a.mother_says, a.father_says)
         Path(a.o).write_text(json.dumps(rec, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         print(f"consent -> {a.o}")
+    elif a.cmd == "consent-sign":
+        from . import nostr
+        rec = json.loads(Path(a.record).read_text(encoding="utf-8"))
+        kind, secret = nostr.decode_key(Path(a.key_file).read_text(encoding="utf-8").strip())
+        if kind == "npub":
+            sys.exit("that is a public key; signing needs the secret key")
+        try:
+            rec = sign_consent(rec, a.role, load(a.genome), secret)
+        except ReproductionError as e:
+            sys.exit(f"refused: {e}")
+        Path(a.o).write_text(json.dumps(rec, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"{a.role} signature -> {a.o}")
     elif a.cmd == "mate":
         consent = json.loads(Path(a.consent).read_text(encoding="utf-8"))
         save(mate(load(a.mother), load(a.father), consent, a.seed, a.rate, a.born, _store(a.store)), a.o)
