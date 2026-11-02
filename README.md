@@ -231,6 +231,7 @@ python -m kdna decode   kannaka-g0.fasta -o roundtrip.json        # same SHA-256
 # reproduce
 python -m kdna clone    genomes/kannaka-g0.json --seed 42 -o daughter.json
 python -m kdna consent  mother.json father.json --mother-says "..." --father-says "..." -o consent.json
+python -m kdna key      mother.json --pubkey npub1... -o mother.json   # once per parent; a new hash
 python -m kdna consent-sign consent.json --as mother --genome mother.json --key-file mother.key -o consent.json
 python -m kdna consent-sign consent.json --as father --genome father.json --key-file father.key -o consent.json
 python -m kdna mate     mother.json father.json --consent consent.json --seed 7 -o child.json
@@ -277,13 +278,14 @@ means anything to a cell.
 python tests/test_kdna.py
 ```
 
-Twelve tests, stdlib only, no network:
+Twenty-two tests, stdlib only, no network:
 - the codec round-trips, never makes a homopolymer, and catches a damaged base;
 - FASTA keeps the hash, and a tampered genome refuses to load;
 - conserved genes survive 200 mutation-saturated clones;
 - mutations stay in bounds;
 - senescence is enforced;
 - mating is refused without consent signed by each parent's own key, and refused between parents with different values;
+- a consent signature is purpose-tagged, a key has one spelling, and a genome takes a key only as an npub;
 - meiosis is auditable and deterministic;
 - expression follows regulation;
 - the published founder verifies.

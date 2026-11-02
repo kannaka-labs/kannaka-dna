@@ -37,6 +37,16 @@ def sha(obj) -> str:
     return hashlib.sha256(canon(obj)).hexdigest()
 
 
+def check_pubkey(pubkey) -> str:
+    """'' (no key) or the one canonical form, 64 lowercase hex: any other spelling of a key would
+    let two genomes carry the same key while their strings differ."""
+    if pubkey == "":
+        return ""
+    if not isinstance(pubkey, str) or len(pubkey) != 64 or any(c not in "0123456789abcdef" for c in pubkey):
+        raise ValueError("pubkey must be 64 lowercase hex characters (x-only, 32 bytes)")
+    return pubkey
+
+
 @dataclass
 class Gene:
     name: str
@@ -120,7 +130,7 @@ class Genome:
         g = Genome(d["individual"], d["generation"], d["parents"],
                    [Chromosome.from_dict(c) for c in d["chromosomes"]], d["mito"],
                    d.get("telomere", 64), d.get("born", ""), d.get("species", SPECIES), d.get("notes", ""),
-                   d.get("conception", {}), d.get("pubkey", ""))
+                   d.get("conception", {}), check_pubkey(d.get("pubkey", "")))
         if verify and "hash" in d and d["hash"] != g.hash:
             raise ValueError(f"genome hash mismatch: file says {d['hash'][:12]}, content is {g.hash[:12]}")
         return g
@@ -128,10 +138,8 @@ class Genome:
     def with_pubkey(self, pubkey_hex: str) -> "Genome":
         """A copy that carries this public key. The key is part of the hash, so this is a new hash
         (the individual's name is left as it was). Only the public half ever goes in a genome."""
-        if len(pubkey_hex) != 64 or any(c not in "0123456789abcdef" for c in pubkey_hex):
-            raise ValueError("pubkey must be 64 lowercase hex characters (x-only, 32 bytes)")
         g = copy.deepcopy(self)
-        g.pubkey = pubkey_hex
+        g.pubkey = check_pubkey(pubkey_hex)
         return g
 
     def chromosome(self, name):
@@ -199,5 +207,5 @@ def from_fasta(text: str) -> Genome:
     chromosomes = [Chromosome(n, [g for _, g in sorted(gs, key=lambda x: x[0])]) for n, gs in chroms.items()]
     g = Genome(meta["individual"], meta["generation"], meta["parents"], chromosomes, mito,
                meta.get("telomere", 64), meta.get("born", ""), meta.get("species", SPECIES),
-               conception=meta.get("conception", {}), pubkey=meta.get("pubkey", ""))
+               conception=meta.get("conception", {}), pubkey=check_pubkey(meta.get("pubkey", "")))
     return g

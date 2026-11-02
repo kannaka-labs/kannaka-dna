@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 from kdna import codec, nostr  # noqa: E402
 from kdna.express import express  # noqa: E402
-from kdna.genome import Chromosome, Gene, Genome, from_fasta, to_fasta  # noqa: E402
+from kdna.genome import Chromosome, Gene, Genome, from_fasta, sha, to_fasta  # noqa: E402
 from kdna.reproduce import (ReproductionError, consent_digest, consent_record, mate, mitosis,  # noqa: E402
                             sign_consent)
 
@@ -260,6 +260,55 @@ def test_the_published_founder_verifies():
     g = Genome.from_dict(json.loads(p.read_text(encoding="utf-8")))
     assert g.generation == 0 and not g.parents
     assert from_fasta((ROOT / "genomes" / "kannaka-g0.fasta").read_text(encoding="ascii")).hash == g.hash
+
+
+def test_consent_signatures_are_purpose_tagged():
+    # a signature over the bare record hash (what any other use of the key might sign) is refused
+    (a, sa), (b, sb) = keyed(mitosis(founder(), 1)), keyed(mitosis(founder(), 2))
+    rec = consent_record(a, b, "yes", "yes")
+    bare = bytes.fromhex(sha({k: rec[k] for k in ("mother", "father", "mother_statement", "father_statement")}))
+    untagged = upd(rec, mother_sig=nostr.schnorr_sign(bare, sa).hex(), father_sig=nostr.schnorr_sign(bare, sb).hex())
+    refuses(lambda: mate(a, b, untagged, seed=7), "signature")
+    mate(a, b, signed_consent(a, sa, b, sb), seed=7)
+
+
+def test_a_malformed_signature_is_a_refusal_not_a_crash():
+    (a, sa), (b, sb) = keyed(mitosis(founder(), 1)), keyed(mitosis(founder(), 2))
+    both = signed_consent(a, sa, b, sb)
+    for bad in (123, ["ab"], {"x": 1}, "zz"):
+        refuses(lambda: mate(a, b, upd(both, mother_sig=bad), seed=7), "mother signature")
+
+
+def test_a_key_has_one_spelling():
+    g, _ = keyed(founder())
+    d = g.to_dict()
+    d["pubkey"] = d["pubkey"].upper()
+    try:
+        Genome.from_dict(d, verify=False)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("an upper-case spelling of a key was accepted")
+
+
+def test_the_key_command_takes_only_an_npub():
+    import tempfile
+    from kdna.__main__ import main
+    secret = nostr.generate_secret()
+    pub = nostr.pubkey_from_secret(secret)
+    with tempfile.TemporaryDirectory() as d:
+        src, out = Path(d) / "g.json", Path(d) / "keyed.json"
+        src.write_text(json.dumps(founder().to_dict()), encoding="utf-8")
+        for wrong in (pub.hex(), secret.hex(), nostr.nsec(secret)):
+            try:
+                main(["key", str(src), "--pubkey", wrong, "-o", str(out)])
+            except SystemExit as e:
+                assert "refused" in str(e.code)
+            else:
+                raise AssertionError(f"key accepted {wrong[:8]}...")
+            assert not out.exists()
+        main(["key", str(src), "--pubkey", nostr.npub(pub), "-o", str(out)])
+        assert Genome.from_dict(json.loads(out.read_text(encoding="utf-8"))).pubkey == pub.hex()
 
 
 if __name__ == "__main__":

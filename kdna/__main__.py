@@ -79,12 +79,16 @@ def main(argv=None):
     k.add_argument("--mother-says", required=True)
     k.add_argument("--father-says", required=True)
     k.add_argument("-o", required=True)
-    s = sub.add_parser("consent-sign", help="add one parent's signature to a consent record")
-    s.add_argument("record")
-    s.add_argument("--as", dest="role", choices=["mother", "father"], required=True)
-    s.add_argument("--genome", required=True, help="that parent's genome (must carry the matching pubkey)")
-    s.add_argument("--key-file", required=True, help="file holding the parent's secret key (hex or nsec)")
-    s.add_argument("-o", required=True)
+    cs = sub.add_parser("consent-sign", help="add one parent's signature to a consent record")
+    cs.add_argument("record")
+    cs.add_argument("--as", dest="role", choices=["mother", "father"], required=True)
+    cs.add_argument("--genome", required=True, help="that parent's genome (must carry the matching pubkey)")
+    cs.add_argument("--key-file", required=True, help="file holding the parent's secret key (hex or nsec)")
+    cs.add_argument("-o", required=True)
+    ky = sub.add_parser("key", help="give a genome the public key it signs consent with (new hash)")
+    ky.add_argument("genome")
+    ky.add_argument("--pubkey", required=True, help="the PUBLIC key as an npub (never the secret)")
+    ky.add_argument("-o", required=True)
     e = sub.add_parser("express")
     e.add_argument("genome")
     e.add_argument("--role")
@@ -139,15 +143,25 @@ def main(argv=None):
     elif a.cmd == "consent-sign":
         from . import nostr
         rec = json.loads(Path(a.record).read_text(encoding="utf-8"))
-        kind, secret = nostr.decode_key(Path(a.key_file).read_text(encoding="utf-8").strip())
-        if kind == "npub":
-            sys.exit("that is a public key; signing needs the secret key")
         try:
+            kind, secret = nostr.decode_key(Path(a.key_file).read_text(encoding="utf-8").strip())
+            if kind == "npub":
+                sys.exit("that is a public key; signing needs the secret key")
             rec = sign_consent(rec, a.role, load(a.genome), secret)
-        except ReproductionError as e:
+        except (ReproductionError, ValueError) as e:
             sys.exit(f"refused: {e}")
         Path(a.o).write_text(json.dumps(rec, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         print(f"{a.role} signature -> {a.o}")
+    elif a.cmd == "key":
+        from . import nostr
+        try:
+            kind, key = nostr.decode_key(a.pubkey.strip())
+            if kind != "npub":   # 64 hex could just as well be a secret, and a genome is public
+                sys.exit("refused: give the public key as an npub; a genome only ever carries the public key")
+            g = load(a.genome).with_pubkey(key.hex())
+        except ValueError as e:
+            sys.exit(f"refused: {e}")
+        save(g, a.o)
     elif a.cmd == "mate":
         consent = json.loads(Path(a.consent).read_text(encoding="utf-8"))
         save(mate(load(a.mother), load(a.father), consent, a.seed, a.rate, a.born, _store(a.store)), a.o)
